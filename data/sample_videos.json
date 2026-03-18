@@ -1,0 +1,30 @@
+[
+    {
+        "video_id": "7300000000001",
+        "url": "https://www.tiktok.com/@username/video/7300000000001",
+        "caption": "Cobain dulu baru judge! #skincare #fyp",
+        "hashtags": "skincare fyp",
+        "sound_name": "original sound",
+        "duration": 30,
+        "views": 150000,
+        "likes": 12000,
+        "comments": 850,
+        "shares": 2300,
+        "saves": 5600,
+        "posted_at": "2026-03-15T18:30:00"
+    },
+    {
+        "video_id": "7300000000002",
+        "url": "https://www.tiktok.com/@username/video/7300000000002",
+        "caption": "Review jujur produk ini... #review #honest",
+        "hashtags": "review honest",
+        "sound_name": "trending sound",
+        "duration": 45,
+        "views": 8500,
+        "likes": 600,
+        "comments": 120,
+        "shares": 80,
+        "saves": 200,
+        "posted_at": "2026-03-14T12:00:00"
+    }
+]

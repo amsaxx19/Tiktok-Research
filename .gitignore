@@ -1,0 +1,21 @@
+# Environment
+.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Data (keep structure, ignore actual data)
+data/tracking.db
+data/products/*.jpg
+data/products/*.png
+data/exports/*.csv
+data/exports/*.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
