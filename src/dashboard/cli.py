@@ -26,6 +26,7 @@ from src.affiliate.tracker import AffiliateTracker
 from src.product_detection.detector import ProductDetector
 
 console = Console()
+detector = ProductDetector()
 scripts = ScriptManager()
 scraper = TikTokScraper()
 analytics = AnalyticsEngine()
@@ -557,81 +558,76 @@ def product_earnings(days):
 
 
 # ═══════════════════════════════════════════════════
-#  PRODUCT DETECTION COMMANDS
+#  PRODUCT + SCRIPT GENERATION (NO API KEY NEEDED)
 # ═══════════════════════════════════════════════════
 
 @cli.group()
-def detect():
-    """Detect products from images and generate scripts."""
+def generate():
+    """Generate scripts via Claude Code chat (no API key needed)."""
     pass
 
 
-@detect.command("image")
-@click.argument("image_path")
+@generate.command("context")
+def generate_context():
+    """Show your performance context (paste this into Claude Code chat)."""
+    context = detector.get_context_for_chat()
+    if context.strip():
+        console.print(Panel(context, title="Your Performance Context", border_style="cyan"))
+    else:
+        console.print("[yellow]No performance data yet. Add scripts and videos first.[/yellow]")
+
+
+@generate.command("prompt")
+@click.option("--name", "-n", required=True, help="Product name")
+@click.option("--desc", "-d", default=None, help="Product description")
+@click.option("--category", "-c", default=None, help="Product category")
 @click.option("--style", "-s", default="storytelling",
               type=click.Choice(["storytelling", "review", "tutorial",
                                  "comparison", "unboxing", "problem_solution"]))
-@click.option("--duration", "-d", default=30, type=int, help="Target duration in seconds")
-@click.option("--price", "-p", default=0, type=float, help="Product price")
-@click.option("--commission", default=10.0, type=float, help="Commission rate %")
-@click.option("--save/--no-save", default=True, help="Save to database")
-def detect_image(image_path, style, duration, price, commission, save):
-    """Detect product from image and generate script."""
-    detector = ProductDetector()
-    try:
-        product_id, script_id, product_info, script_data = detector.detect_and_generate(
-            image_path=image_path, style=style, duration_target=duration,
-            save=save, price=price, commission_rate=commission,
-        )
-
-        console.print(Panel(
-            f"[bold]Product:[/bold] {product_info['name']}\n"
-            f"[bold]Category:[/bold] {product_info.get('category', '-')}\n"
-            f"[bold]Description:[/bold] {product_info.get('description', '-')}\n"
-            f"[bold]Key Features:[/bold] {', '.join(product_info.get('key_features', []))}",
-            title="Detected Product",
-            border_style="cyan",
-        ))
-
-        console.print(Panel(
-            f"[yellow]Hook:[/yellow] {script_data.get('hook', '')}\n\n"
-            f"{script_data.get('content', '')}\n\n"
-            f"[yellow]CTA:[/yellow] {script_data.get('cta', '')}\n\n"
-            f"[dim]Hashtags:[/dim] {' '.join('#' + h for h in script_data.get('hashtag_suggestions', []))}\n"
-            f"[dim]Caption:[/dim] {script_data.get('caption_suggestion', '')}",
-            title=f"Generated Script — {style.title()} Style",
-            border_style="green",
-        ))
-
-        if save:
-            console.print(f"\n[green]Saved as Product #{product_id} + Script #{script_id}[/green]")
-    except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+@click.option("--duration", default=30, type=int, help="Target duration in seconds")
+def generate_prompt(name, desc, category, style, duration):
+    """Generate a prompt for Claude Code chat to create a script."""
+    prompt = detector.generate_prompt_for_product(
+        product_name=name, product_description=desc,
+        category=category, style=style, duration_target=duration,
+    )
+    console.print(Panel(
+        prompt,
+        title="Copy this prompt to Claude Code chat (or just tell Claude directly!)",
+        border_style="green",
+    ))
 
 
-@detect.command("batch")
-@click.argument("image_dir")
-@click.option("--style", "-s", default="storytelling")
-def detect_batch(image_dir, style):
-    """Process all product images in a directory."""
-    image_dir = Path(image_dir)
-    extensions = {".jpg", ".jpeg", ".png", ".webp"}
-    images = [f for f in image_dir.iterdir() if f.suffix.lower() in extensions]
+@generate.command("save")
+@click.option("--product-name", "-n", required=True, help="Product name")
+@click.option("--category", "-c", default=None, help="Category")
+@click.option("--price", "-p", default=0, type=float, help="Price")
+@click.option("--commission", default=10.0, type=float, help="Commission %")
+@click.option("--link", default=None, help="Affiliate link")
+@click.option("--source", default="tiktok_shop", help="Source platform")
+@click.option("--script-title", "-t", default=None, help="Script title")
+@click.option("--script-file", "-f", required=True, help="Path to script text file")
+@click.option("--hook", default=None, help="Hook line")
+@click.option("--cta", default=None, help="CTA line")
+@click.option("--tags", default=None, help="Comma-separated tags")
+def generate_save(product_name, category, price, commission, link, source,
+                  script_title, script_file, hook, cta, tags):
+    """Save a product + script that Claude generated in chat."""
+    with open(script_file, "r") as f:
+        script_content = f.read()
 
-    if not images:
-        console.print(f"[yellow]No images found in {image_dir}[/yellow]")
-        return
-
-    console.print(f"Found {len(images)} images. Processing...")
-    detector = ProductDetector()
-    results = detector.batch_generate([str(p) for p in images], style=style)
-
-    for r in results:
-        if r["success"]:
-            _, _, pinfo, _ = r["data"]
-            console.print(f"  [green]OK[/green] {r['image']} → {pinfo['name']}")
-        else:
-            console.print(f"  [red]FAIL[/red] {r['image']}: {r['error']}")
+    product_id, script_id = detector.save_product_and_script(
+        product_name=product_name, category=category,
+        price=price, commission_rate=commission,
+        affiliate_link=link, source=source,
+        script_title=script_title, script_content=script_content,
+        hook=hook, cta=cta, tags=tags,
+    )
+    console.print(
+        f"[green]Saved! Product #{product_id} + Script #{script_id}[/green]\n"
+        f"[dim]Now link the script to a video after posting: "
+        f"python main.py script link {script_id} <video_id>[/dim]"
+    )
 
 
 # ═══════════════════════════════════════════════════

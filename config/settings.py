@@ -1,5 +1,6 @@
 """
 Configuration settings for TikTok Script Tracking System.
+No API key needed — all AI features run through Claude Code chat.
 """
 import os
 from pathlib import Path
@@ -18,10 +19,6 @@ DB_PATH = DATA_DIR / "tracking.db"
 
 # TikTok settings
 TIKTOK_USERNAME = os.getenv("TIKTOK_USERNAME", "")
-TIKTOK_SECUID = os.getenv("TIKTOK_SECUID", "")
-
-# Anthropic API for script generation
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
 # Scraping settings
 SCRAPE_DELAY_MIN = 2  # seconds between requests
